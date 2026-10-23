@@ -14,20 +14,21 @@ from ..models.user import User, UserSession
 
 def extract_token_from_request(request: Request) -> Optional[str]:
     """
-    Extracts authentication token from HttpOnly cookie or Authorization header.
+    Extracts authentication token from Authorization header or HttpOnly cookie.
+    Explicit Authorization header takes precedence.
     """
-    # 1. Check HttpOnly cookie
+    # 1. Check Authorization Bearer header
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        return auth_header[7:].strip()
+
+    # 2. Check HttpOnly cookie
     cookie_token = request.cookies.get("access_token")
     if cookie_token:
         # If stored as 'Bearer <token>' in cookie, strip prefix
         if cookie_token.startswith("Bearer "):
             return cookie_token[7:].strip()
         return cookie_token.strip()
-
-    # 2. Check Authorization Bearer header
-    auth_header = request.headers.get("Authorization")
-    if auth_header and auth_header.startswith("Bearer "):
-        return auth_header[7:].strip()
 
     return None
 

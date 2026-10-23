@@ -19,11 +19,13 @@ try:
     from backend.app.api.orders import router as orders_router
     from backend.app.api.returns import router as returns_router
     from backend.app.api.auth import router as auth_router
+    from backend.app.api.chat import router as chat_router
 except ImportError:
     from app.core.database import init_db
     from app.api.orders import router as orders_router
     from app.api.returns import router as returns_router
     from app.api.auth import router as auth_router
+    from app.api.chat import router as chat_router
 
 
 @asynccontextmanager
@@ -69,6 +71,8 @@ app.include_router(returns_router, prefix="/api")
 app.include_router(returns_router)
 app.include_router(auth_router, prefix="/api")
 app.include_router(auth_router)
+app.include_router(chat_router, prefix="/api")
+app.include_router(chat_router)
 
 
 @app.get("/", tags=["General"])

@@ -10,6 +10,8 @@ import { Layout } from './components/layout/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { StartReturn } from './pages/StartReturn';
 import { ReturnTracking } from './pages/ReturnTracking';
+import { AiAdvisor } from './pages/AiAdvisor';
+import { ChatWidget } from './components/chat/ChatWidget';
 
 import { SignIn } from './pages/auth/SignIn';
 import { SignUp } from './pages/auth/SignUp';
@@ -19,7 +21,7 @@ import { ResetPassword } from './pages/auth/ResetPassword';
 
 const AppContent: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'start-return' | 'tracking'>('dashboard');
+  const [currentTab, setCurrentTab] = useState<'dashboard' | 'advisor' | 'start-return' | 'tracking'>('dashboard');
   const [authView, setAuthView] = useState<
     'signin' | 'signup' | 'verify-email' | 'forgot-password' | 'reset-password'
   >('signin');
@@ -69,6 +71,8 @@ const AppContent: React.FC = () => {
     switch (currentTab) {
       case 'dashboard':
         return <Dashboard onNavigate={(tab) => setCurrentTab(tab as any)} />;
+      case 'advisor':
+        return <AiAdvisor onNavigate={(tab) => setCurrentTab(tab as any)} />;
       case 'start-return':
         return <StartReturn onSuccessNavigate={(tab) => setCurrentTab(tab as any)} />;
       case 'tracking':
@@ -79,9 +83,12 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <Layout currentTab={currentTab} setCurrentTab={(tab) => setCurrentTab(tab as any)}>
-      {renderPage()}
-    </Layout>
+    <>
+      <Layout currentTab={currentTab} setCurrentTab={(tab) => setCurrentTab(tab as any)}>
+        {renderPage()}
+      </Layout>
+      <ChatWidget onNavigateTab={(tab) => setCurrentTab(tab as any)} />
+    </>
   );
 };
 

@@ -1,9 +1,15 @@
 import {
+  ActionConfirmRequest,
+  ActionConfirmResponse,
   AuthResponse,
+  ChatMessage,
+  ChatRequest,
   ForgotPasswordRequest,
   HealthStatus,
   MessageResponse,
   Order,
+  PhotoAnalysisResult,
+  PolicyCitation,
   ResendVerificationRequest,
   ResetPasswordRequest,
   ReturnCheckRequest,
@@ -56,11 +62,17 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const fullUrl = `${API_BASE}${url}`;
   const token = getStoredToken();
 
+  const isFormData = typeof FormData !== 'undefined' && options?.body instanceof FormData;
+
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options?.headers as Record<string, string> || {}),
   };
+
+  if (isFormData) {
+    delete headers['Content-Type'];
+  }
 
   try {
     const response = await fetch(fullUrl, {
@@ -248,12 +260,12 @@ export const api = {
   },
 
   // Demo order generator to test easily
-  async seedDemoOrder(): Promise<Order> {
+  async seedDemoOrder(customerEmail?: string, customerName?: string): Promise<Order> {
     const rand = Math.floor(1000 + Math.random() * 9000);
     const demoPayload = {
       order_number: `ORD-DEMO-${rand}`,
-      customer_name: 'Sarah Connor',
-      customer_email: 'sarah.connor@example.com',
+      customer_name: customerName || 'Valued Customer',
+      customer_email: customerEmail || 'customer@example.com',
       shipping_status: 'DELIVERED',
       delivery_date: new Date().toISOString(),
       items: [
@@ -284,5 +296,40 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(demoPayload),
     });
+  },
+
+  // AI Chat & Assistant
+  async sendChatMessage(payload: ChatRequest): Promise<ChatMessage> {
+    return fetchJson<ChatMessage>('/api/chat/message', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async confirmReturnAction(payload: ActionConfirmRequest): Promise<ActionConfirmResponse> {
+    return fetchJson<ActionConfirmResponse>('/api/chat/confirm-action', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async getChatOrders(): Promise<Order[]> {
+    return fetchJson<Order[]>('/api/chat/orders');
+  },
+
+  async uploadDefectPhoto(file: File, notes?: string): Promise<PhotoAnalysisResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (notes) {
+      formData.append('notes', notes);
+    }
+    return fetchJson<PhotoAnalysisResult>('/api/chat/upload-photo', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+
+  async getPolicies(): Promise<PolicyCitation[]> {
+    return fetchJson<PolicyCitation[]>('/api/chat/policies');
   },
 };

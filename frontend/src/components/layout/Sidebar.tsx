@@ -79,6 +79,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       badge: undefined,
     },
     {
+      id: 'advisor',
+      label: 'AI Return Advisor',
+      icon: Sparkles,
+      badge: 'AI',
+    },
+    {
       id: 'start-return',
       label: 'Start a Return',
       icon: RotateCcw,

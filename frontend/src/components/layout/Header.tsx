@@ -20,6 +20,8 @@ export const Header: React.FC<HeaderProps> = ({
     switch (tab) {
       case 'dashboard':
         return { title: 'Operations Dashboard', subtitle: 'Overview of return metrics, policy status and recent activity' };
+      case 'advisor':
+        return { title: 'AI Return & Exchange Advisor', subtitle: 'Multilingual conversational policy verification and automated returns' };
       case 'start-return':
         return { title: 'Start a Return Request', subtitle: 'Verify customer credentials and item eligibility before submission' };
       case 'tracking':
