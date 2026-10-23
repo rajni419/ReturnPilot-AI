@@ -18,10 +18,12 @@ try:
     from backend.app.core.database import init_db
     from backend.app.api.orders import router as orders_router
     from backend.app.api.returns import router as returns_router
+    from backend.app.api.auth import router as auth_router
 except ImportError:
     from app.core.database import init_db
     from app.api.orders import router as orders_router
     from app.api.returns import router as returns_router
+    from app.api.auth import router as auth_router
 
 
 @asynccontextmanager
@@ -44,13 +46,20 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Enable Cross-Origin Resource Sharing (CORS) for future frontend integration
+# Enable Cross-Origin Resource Sharing (CORS) with credentials support
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Register API Routers
@@ -58,7 +67,8 @@ app.include_router(orders_router, prefix="/api")
 app.include_router(orders_router)
 app.include_router(returns_router, prefix="/api")
 app.include_router(returns_router)
-
+app.include_router(auth_router, prefix="/api")
+app.include_router(auth_router)
 
 
 @app.get("/", tags=["General"])
@@ -75,4 +85,3 @@ def health_check():
     Health check endpoint to monitor API status.
     """
     return {"status": "healthy"}
-

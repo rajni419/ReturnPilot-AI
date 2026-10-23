@@ -19,6 +19,18 @@ from .returns import (
     ReturnResponse,
 )
 
+from .auth import (
+    UserRegisterRequest,
+    UserLoginRequest,
+    VerifyEmailRequest,
+    ResendVerificationRequest,
+    ForgotPasswordRequest,
+    ResetPasswordRequest,
+    UserResponse,
+    AuthResponse,
+    MessageResponse,
+)
+
 __all__ = [
     "OrderItemBase",
     "OrderItemCreate",
@@ -31,6 +43,13 @@ __all__ = [
     "ReturnCheckResponse",
     "ReturnCreateRequest",
     "ReturnResponse",
+    "UserRegisterRequest",
+    "UserLoginRequest",
+    "VerifyEmailRequest",
+    "ResendVerificationRequest",
+    "ForgotPasswordRequest",
+    "ResetPasswordRequest",
+    "UserResponse",
+    "AuthResponse",
+    "MessageResponse",
 ]
-
-

@@ -5,8 +5,12 @@ import {
   Search,
   Sparkles,
   ExternalLink,
+  LogOut,
+  ShieldCheck,
 } from 'lucide-react';
 import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
 
 interface SidebarProps {
   currentTab: string;
@@ -21,7 +25,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isMobileOpen,
   setIsMobileOpen,
 }) => {
+  const { user, logout } = useAuth();
+  const { showToast } = useToast();
   const [isBackendHealthy, setIsBackendHealthy] = useState<boolean | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      showToast('You have signed out successfully.', 'info');
+    } catch {
+      showToast('Signed out.', 'info');
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  const getInitials = (name?: string) => {
+    if (!name) return 'U';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
+
 
   useEffect(() => {
     let mounted = true;
@@ -178,6 +207,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </span>
             </div>
           </div>
+
+          {/* Authenticated User Profile & Logout */}
+          {user && (
+            <div className="pt-2 border-t border-slate-200/60">
+              <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-white border border-slate-200/80 shadow-xs">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-brand-600 text-white font-bold text-xs flex items-center justify-center flex-shrink-0 shadow-xs">
+                    {getInitials(user.full_name)}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1">
+                      <p className="text-xs font-semibold text-slate-800 truncate leading-tight">
+                        {user.full_name}
+                      </p>
+                      {user.is_verified && (
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-400 truncate leading-tight mt-0.5">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  title="Sign Out"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors flex-shrink-0 disabled:opacity-50"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </aside>
     </>

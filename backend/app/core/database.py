@@ -4,7 +4,7 @@ Database configuration and session management for SQLite using SQLAlchemy.
 
 import os
 from pathlib import Path
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 # Anchor database file in the backend root directory
@@ -13,8 +13,6 @@ DB_FILE = BASE_DIR / "returnpilot.db"
 DEFAULT_DB_URL = f"sqlite:///{DB_FILE.as_posix()}"
 
 DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_DB_URL)
-
-from sqlalchemy import create_engine, event
 
 engine = create_engine(
     DATABASE_URL,
@@ -31,7 +29,6 @@ if "sqlite" in DATABASE_URL:
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
-
 
 
 def get_db():
@@ -51,10 +48,24 @@ def init_db():
     Creates all database tables defined in the metadata.
     """
     try:
-        from ..models import Order, OrderItem, ReturnRequest  # noqa: F401
+        from ..models import (  # noqa: F401
+            Order,
+            OrderItem,
+            ReturnRequest,
+            User,
+            EmailVerificationToken,
+            PasswordResetToken,
+            UserSession,
+        )
     except (ImportError, ValueError):
-        from backend.app.models import Order, OrderItem, ReturnRequest  # noqa: F401
+        from backend.app.models import (  # noqa: F401
+            Order,
+            OrderItem,
+            ReturnRequest,
+            User,
+            EmailVerificationToken,
+            PasswordResetToken,
+            UserSession,
+        )
 
     Base.metadata.create_all(bind=engine)
-
-

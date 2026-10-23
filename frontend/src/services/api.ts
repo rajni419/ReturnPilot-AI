@@ -1,15 +1,25 @@
 import {
+  AuthResponse,
+  ForgotPasswordRequest,
   HealthStatus,
+  MessageResponse,
   Order,
+  ResendVerificationRequest,
+  ResetPasswordRequest,
   ReturnCheckRequest,
   ReturnCheckResponse,
   ReturnCreateRequest,
   ReturnRequest,
+  UserLoginRequest,
+  UserProfile,
+  UserRegisterRequest,
+  VerifyEmailRequest,
 } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000';
+const TOKEN_KEY = 'rp_auth_token';
 
-class ApiError extends Error {
+export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
     super(message);
@@ -18,15 +28,45 @@ class ApiError extends Error {
   }
 }
 
+export function getStoredToken(): string | null {
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredToken(token: string): void {
+  try {
+    localStorage.setItem(TOKEN_KEY, token);
+  } catch {
+    // Ignore storage errors in restricted iframe/private mode
+  }
+}
+
+export function clearStoredToken(): void {
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   const fullUrl = `${API_BASE}${url}`;
+  const token = getStoredToken();
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options?.headers as Record<string, string> || {}),
+  };
+
   try {
     const response = await fetch(fullUrl, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(options?.headers || {}),
-      },
+      credentials: 'include', // Support HttpOnly cookies across origin
+      headers,
     });
 
     if (!response.ok) {
@@ -34,9 +74,16 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
       try {
         const errorData = await response.json();
         if (errorData && errorData.detail) {
-          errorMessage = typeof errorData.detail === 'string'
-            ? errorData.detail
-            : JSON.stringify(errorData.detail);
+          if (typeof errorData.detail === 'string') {
+            errorMessage = errorData.detail;
+          } else if (Array.isArray(errorData.detail)) {
+            // Pydantic 422 validation errors
+            errorMessage = errorData.detail
+              .map((err: any) => err.msg || err.message || JSON.stringify(err))
+              .join('; ');
+          } else {
+            errorMessage = JSON.stringify(errorData.detail);
+          }
         }
       } catch {
         // Fallback to text status
@@ -48,7 +95,22 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
       return {} as T;
     }
 
-    return await response.json();
+    const data = await response.json();
+
+    // Check for dev token headers (in non-SMTP environments)
+    const devVerifyToken = response.headers.get('x-dev-verification-token');
+    const devResetToken = response.headers.get('x-dev-reset-token');
+
+    if (data && typeof data === 'object') {
+      if (devVerifyToken && !data.dev_token) {
+        data.dev_token = devVerifyToken;
+      }
+      if (devResetToken && !data.dev_token) {
+        data.dev_token = devResetToken;
+      }
+    }
+
+    return data;
   } catch (err: any) {
     if (err instanceof ApiError) {
       throw err;
@@ -58,6 +120,75 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  // Authentication
+  async register(payload: UserRegisterRequest): Promise<UserProfile & { dev_token?: string }> {
+    return fetchJson<UserProfile & { dev_token?: string }>('/api/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async login(payload: UserLoginRequest): Promise<AuthResponse> {
+    const res = await fetchJson<AuthResponse>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    if (res.access_token) {
+      setStoredToken(res.access_token);
+    }
+    return res;
+  },
+
+  async getMe(): Promise<UserProfile> {
+    return fetchJson<UserProfile>('/api/auth/me');
+  },
+
+  async logout(): Promise<MessageResponse> {
+    try {
+      const res = await fetchJson<MessageResponse>('/api/auth/logout', {
+        method: 'POST',
+      });
+      clearStoredToken();
+      return res;
+    } catch (err) {
+      clearStoredToken();
+      throw err;
+    }
+  },
+
+  async verifyEmail(payload: VerifyEmailRequest): Promise<MessageResponse> {
+    return fetchJson<MessageResponse>('/api/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async resendVerification(payload: ResendVerificationRequest): Promise<MessageResponse> {
+    return fetchJson<MessageResponse>('/api/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async forgotPassword(payload: ForgotPasswordRequest): Promise<MessageResponse> {
+    return fetchJson<MessageResponse>('/api/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  async resetPassword(payload: ResetPasswordRequest): Promise<MessageResponse> {
+    return fetchJson<MessageResponse>('/api/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  // Token Helpers
+  getToken: getStoredToken,
+  setToken: setStoredToken,
+  clearToken: clearStoredToken,
+
   // System Health
   async getHealth(): Promise<HealthStatus> {
     return fetchJson<HealthStatus>('/health');

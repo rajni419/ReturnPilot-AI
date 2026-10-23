@@ -58,3 +58,59 @@ export interface ReturnRequest {
 export interface HealthStatus {
   status: string;
 }
+
+export interface UserProfile {
+  id: number;
+  email: string;
+  full_name: string;
+  is_active: boolean;
+  is_verified: boolean;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface AuthResponse {
+  access_token: string;
+  token_type: string;
+  user: UserProfile;
+  message: string;
+}
+
+export interface UserRegisterRequest {
+  full_name: string;
+  email: string;
+  password: string;
+  confirm_password: string;
+}
+
+export interface UserLoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface VerifyEmailRequest {
+  email: string;
+  token: string;
+}
+
+export interface ResendVerificationRequest {
+  email: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  token: string;
+  new_password: string;
+  confirm_password: string;
+}
+
+export interface MessageResponse {
+  message: string;
+  success: boolean;
+  dev_token?: string | null;
+}
+

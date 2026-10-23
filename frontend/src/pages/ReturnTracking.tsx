@@ -12,7 +12,6 @@ import {
 
 import { api } from '../services/api';
 import { ReturnRequest } from '../types';
-import { Badge } from '../components/ui/Badge';
 import { Skeleton } from '../components/ui/Skeleton';
 import { useToast } from '../context/ToastContext';
 
