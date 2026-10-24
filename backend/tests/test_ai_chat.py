@@ -446,6 +446,133 @@ class TestAIChatSystem(unittest.TestCase):
         self.assertEqual(resp.status_code, 400)
         self.assertIn("unsupported", resp.json()["detail"].lower())
 
+    # 18. Policy Inquiry in English (Must explain policy and cite GEN-01 without returning order cards)
+    def test_18_policy_inquiry_english(self):
+        resp = self.client.post(
+            "/api/chat/message",
+            headers=self.alice_headers,
+            json={"message": "What is your return policy?", "session_id": "test-sess-policy-en"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["role"], "assistant")
+        self.assertEqual(len(data.get("orders", [])), 0, "General policy inquiry must not return order selection cards")
+        self.assertGreater(len(data.get("citations", [])), 0, "Policy inquiry must cite policy sections")
+        self.assertTrue(any(c["policy_id"] in ["GEN-01", "APP-02"] for c in data["citations"]))
+        self.assertIn("7", data["content"])
+
+    # 19. Policy Inquiry in Hinglish (Must explain policy in Hinglish without returning order cards)
+    def test_19_policy_inquiry_hinglish(self):
+        resp = self.client.post(
+            "/api/chat/message",
+            headers=self.alice_headers,
+            json={"message": "return policy kya h?", "session_id": "test-sess-policy-hi"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["role"], "assistant")
+        self.assertEqual(len(data.get("orders", [])), 0, "Policy inquiry in Hinglish must not return order selection cards")
+        self.assertGreater(len(data.get("citations", [])), 0)
+        self.assertIn(data["language"], ["hinglish", "en"])
+        self.assertTrue(any(w in data["content"].lower() for w in ["7", "policy", "days", "return", "window"]))
+
+    # 20. Order Lookup (Authorized multi-item order presents order card, doesn't repeat greeting)
+    def test_20_order_lookup_authorized_multi_item(self):
+        resp = self.client.post(
+            "/api/chat/message",
+            headers=self.alice_headers,
+            json={"message": "ORD-ALICE-101 check karke batao", "session_id": "test-sess-order-1"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["role"], "assistant")
+        self.assertNotIn("Hello! I am your ReturnPilot AI assistant", data["content"], "Must not repeat initial static greeting")
+        self.assertEqual(len(data.get("orders", [])), 1)
+        self.assertEqual(data["orders"][0]["order_number"], "ORD-ALICE-101")
+        self.assertIn("ORD-ALICE-101", data["content"])
+
+    # 21. Order Lookup (Cross-customer order lookup is forbidden and masked)
+    def test_21_order_lookup_cross_customer_forbidden(self):
+        resp = self.client.post(
+            "/api/chat/message",
+            headers=self.alice_headers,  # Alice attempts to inspect Bob's order
+            json={"message": "ORD-BOB-999 check karke batao", "session_id": "test-sess-order-hack"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(len(data.get("orders", [])), 0, "Must not return orders of other customers")
+        self.assertIn("ORD-BOB-999", data["content"])
+        self.assertTrue(any(w in data["content"].lower() for w in ["another", "dusre", "security", "privacy", "account"]))
+
+    # 22. Order Lookup (Non-existent order informs user gracefully)
+    def test_22_order_lookup_nonexistent(self):
+        resp = self.client.post(
+            "/api/chat/message",
+            headers=self.alice_headers,
+            json={"message": "ORD-NONEXISTENT-999 check karke batao", "session_id": "test-sess-order-missing"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(len(data.get("orders", [])), 0)
+        self.assertTrue(any(w in data["content"].lower() for w in ["not found", "nahi mila", "record"]))
+
+    # 23. Refund Inquiry Without Active Return (Explains REF-06 timeline and asks for order number)
+    def test_23_refund_inquiry_without_active_return(self):
+        resp = self.client.post(
+            "/api/chat/message",
+            headers=self.alice_headers,
+            json={"message": "Mera refund abhi tak nahi aaya, kya karun?", "session_id": "test-sess-refund-none"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(len(data.get("orders", [])), 0)
+        self.assertTrue(any(c["policy_id"] == "REF-06" for c in data.get("citations", [])))
+        self.assertTrue(any(w in data["content"].lower() for w in ["store credit", "upi", "netbanking", "credit card", "business days", "pickup"]))
+
+    # 24. Refund Inquiry With Active Return (Shows status of return request and cites REF-06)
+    def test_24_refund_inquiry_with_active_return(self):
+        ret = ReturnRequest(
+            return_number="RET-7777",
+            order_id=self.order_alice.id,
+            order_item_id=self.item_shoes.id,
+            order_number=self.order_alice.order_number,
+            customer_email="alice@example.com",
+            sku="SHOE-PRO-9",
+            return_reason="[EXCHANGE_SIZE] Size too tight",
+            status="PENDING",
+        )
+        self.db.add(ret)
+        self.db.commit()
+
+        resp = self.client.post(
+            "/api/chat/message",
+            headers=self.alice_headers,
+            json={"message": "Mera refund abhi tak nahi aaya, kya karun?", "session_id": "test-sess-refund-active"},
+        )
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn("RET-7777", data["content"])
+        self.assertIn("PENDING", data["content"])
+        self.assertTrue(any(c["policy_id"] == "REF-06" for c in data.get("citations", [])))
+
+    # 25. Conversational Greetings (Localized without static welcome loop)
+    def test_25_greeting_localized(self):
+        resp_hi = self.client.post(
+            "/api/chat/message",
+            headers=self.alice_headers,
+            json={"message": "Namaste", "session_id": "test-sess-greet-hi"},
+        )
+        self.assertEqual(resp_hi.status_code, 200)
+        self.assertIn("Alice", resp_hi.json()["content"])
+
+        resp_en = self.client.post(
+            "/api/chat/message",
+            headers=self.alice_headers,
+            json={"message": "Hello", "session_id": "test-sess-greet-en"},
+        )
+        self.assertEqual(resp_en.status_code, 200)
+        self.assertIn("Alice", resp_en.json()["content"])
+
 
 if __name__ == "__main__":
     unittest.main()

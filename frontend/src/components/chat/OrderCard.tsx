@@ -55,43 +55,68 @@ export const OrderCard: React.FC<OrderCardProps> = ({ orders, onSelectItem }) =>
               {order.items?.map((item: any, idx: number) => (
                 <div
                   key={idx}
-                  className="flex flex-wrap items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs"
+                  className={`p-2.5 rounded-xl border text-xs transition-colors ${
+                    item.is_returnable
+                      ? 'bg-slate-50 border-slate-100'
+                      : 'bg-amber-50/40 border-amber-200/60'
+                  }`}
                 >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-slate-800 truncate leading-snug">
-                      {item.product_name}
-                    </p>
-                    <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
-                      <span className="font-mono">SKU: {item.sku}</span>
-                      <span>&bull;</span>
-                      <span>Qty: {item.quantity}</span>
-                      <span>&bull;</span>
-                      <span className="font-medium text-slate-700">${Number(item.price).toFixed(2)}</span>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-slate-800 truncate leading-snug">
+                        {item.product_name}
+                      </p>
+                      <div className="flex items-center gap-2 mt-0.5 text-[11px] text-slate-500">
+                        <span className="font-mono">SKU: {item.sku}</span>
+                        <span>&bull;</span>
+                        <span>Qty: {item.quantity}</span>
+                        <span>&bull;</span>
+                        <span className="font-medium text-slate-700">${Number(item.price).toFixed(2)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {item.is_returnable ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-medium">
+                          <CheckCircle2 className="h-3 w-3" />
+                          <span>Returnable</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[10px] text-amber-700 font-semibold px-2 py-0.5 rounded-md bg-amber-100/70 border border-amber-300">
+                          <ShieldAlert className="h-3 w-3 text-amber-600" />
+                          <span>Final Sale</span>
+                        </span>
+                      )}
+
+                      {item.is_returnable ? (
+                        <button
+                          type="button"
+                          onClick={() => onSelectItem(order.order_number, item.sku, item.product_name)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs shadow-xs transition-colors"
+                        >
+                          <span>Select Item</span>
+                          <ArrowRight className="h-3 w-3" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => onSelectItem(order.order_number, item.sku, item.product_name)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-amber-100/80 hover:bg-amber-200/80 text-amber-900 border border-amber-300 font-medium text-xs shadow-2xs transition-colors"
+                          title="Final Sale item: standard returns prohibited per Policy CUS-05. Click to check transit damage or defect exceptions."
+                        >
+                          <ShieldAlert className="h-3.5 w-3.5 text-amber-700" />
+                          <span>Report Damage</span>
+                        </button>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {item.is_returnable ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-medium">
-                        <CheckCircle2 className="h-3 w-3" />
-                        <span>Returnable</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[10px] text-amber-600 font-medium">
-                        <ShieldAlert className="h-3 w-3" />
-                        <span>Final Sale</span>
-                      </span>
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => onSelectItem(order.order_number, item.sku, item.product_name)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium text-xs shadow-xs transition-colors"
-                    >
-                      <span>Select Item</span>
-                      <ArrowRight className="h-3 w-3" />
-                    </button>
-                  </div>
+                  {!item.is_returnable && (
+                    <div className="mt-1.5 pt-1.5 border-t border-amber-200/50 flex items-center gap-1.5 text-[10px] text-amber-800">
+                      <span className="font-medium">Policy CUS-05:</span>
+                      <span>Clearance & customized items are non-returnable (exceptions for transit damage or error only).</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

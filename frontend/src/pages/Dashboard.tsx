@@ -14,12 +14,14 @@ import { ReturnRequest, Order } from '../types';
 import { Badge } from '../components/ui/Badge';
 import { Skeleton } from '../components/ui/Skeleton';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 
 interface DashboardProps {
   onNavigate: (tab: string) => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
+  const { user } = useAuth();
   const [returns, setReturns] = useState<ReturnRequest[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +51,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const handleSeedDemo = async () => {
     setSeeding(true);
     try {
-      const newOrder = await api.seedDemoOrder();
+      const newOrder = await api.seedDemoOrder(user?.email, user?.full_name);
       showToast(`Sample order created: ${newOrder.order_number}`, 'success');
       loadData();
     } catch (err: any) {

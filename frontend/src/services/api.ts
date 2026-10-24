@@ -261,11 +261,22 @@ export const api = {
 
   // Demo order generator to test easily
   async seedDemoOrder(customerEmail?: string, customerName?: string): Promise<Order> {
+    let email = customerEmail;
+    let name = customerName;
+    if (!email) {
+      try {
+        const me = await this.getMe();
+        email = me.email;
+        name = me.full_name;
+      } catch {
+        // Fallback for offline or non-authenticated sessions
+      }
+    }
     const rand = Math.floor(1000 + Math.random() * 9000);
     const demoPayload = {
       order_number: `ORD-DEMO-${rand}`,
-      customer_name: customerName || 'Valued Customer',
-      customer_email: customerEmail || 'customer@example.com',
+      customer_name: name || 'Valued Customer',
+      customer_email: email || 'customer@example.com',
       shipping_status: 'DELIVERED',
       delivery_date: new Date().toISOString(),
       items: [

@@ -88,9 +88,17 @@ class BuiltinMultilingualEngine(LLMProvider):
             elif citations:
                 c = citations[0]
                 return (
-                    f"ReturnPilot पॉलिसी के अनुसार ({c.get('section')}):\n\n"
+                    f"ReturnPilot स्टोर पॉलिसी के अनुसार (**{c.get('section')}** - {c.get('title')}):\n\n"
                     f"{c.get('snippet')}\n\n"
-                    f"क्या आप किसी विशिष्ट ऑर्डर के लिए रिटर्न या एक्सचेंज शुरू करना चाहते हैं?"
+                    f"• सामान्य उत्पाद डिलीवरी के 7 दिनों के भीतर लौटाए जा सकते हैं।\n"
+                    f"• कपड़े और जूतों के लिए 14 दिनों की एक्सचेंज विंडो उपलब्ध है।\n"
+                    f"• सभी मान्य रिटर्न के लिए निःशुल्क डोरस्टेप पिकअप प्रदान किया जाता है।\n\n"
+                    f"क्या आप किसी विशिष्ट ऑर्डर के लिए रिटर्न या एक्सचेंज शुरू करना चाहते हैं? कृपया अपना ऑर्डर नंबर साझा करें।"
+                )
+            else:
+                return (
+                    f"नमस्ते! मैं ReturnPilot AI सहायक हूँ। मैं आपके रिटर्न, एक्सचेंज, रिफंड या स्टोर नीतियों के प्रश्नों में "
+                    f"सहायता कर सकता हूँ। आप अपना ऑर्डर नंबर साझा कर सकते हैं।"
                 )
 
         elif language == "hinglish":
@@ -113,9 +121,18 @@ class BuiltinMultilingualEngine(LLMProvider):
             elif citations:
                 c = citations[0]
                 return (
-                    f"ReturnPilot ki verified policy ke mutabiq (**{c.get('section')}**):\n\n"
+                    f"ReturnPilot ki verified policy ke mutabiq (**{c.get('section')}** - {c.get('title')}):\n\n"
                     f"{c.get('snippet')}\n\n"
-                    f"Kya aapko kisi particular order ke liye help chahiye? Aap apna order number share kar sakte hain."
+                    f"• Standard return window delivery ke 7 calendar days tak valid rehta hai.\n"
+                    f"• Clothing aur footwear ke liye 14 days ka exchange window milta hai.\n"
+                    f"• Item original packaging aur tags ke saath hona chahiye.\n"
+                    f"• ReturnPilot 100% free doorstep reverse pickup provide karta hai.\n\n"
+                    f"Kya aap kisi particular order ke liye return ya exchange check karna chahte hain? Aap apna order number (jaise ORD-DEMO-4827) share kar sakte hain."
+                )
+            else:
+                return (
+                    f"Main samajh gaya! ReturnPilot AI aapko return, exchange, size replacement, ya refund status check karne me "
+                    f"poori madad kar sakta hai. Aap apna Order Number share karein ya batayein aapko kis policy me guidance chahiye."
                 )
 
         # Default English
@@ -137,15 +154,18 @@ class BuiltinMultilingualEngine(LLMProvider):
         elif citations:
             c = citations[0]
             return (
-                f"According to verified ReturnPilot policy (**{c.get('section')}**):\n\n"
+                f"According to verified ReturnPilot policy (**{c.get('section')}** - {c.get('title')}):\n\n"
                 f"{c.get('snippet')}\n\n"
-                f"Would you like me to look up one of your delivered orders to check eligibility?"
+                f"• Standard return window is 7 calendar days from confirmed delivery.\n"
+                f"• Apparel & footwear qualify for an extended 14-day exchange window.\n"
+                f"• Products must include original tags, accessories, and unbroken packaging.\n"
+                f"• We provide 100% free doorstep courier reverse pickup.\n\n"
+                f"Would you like me to look up one of your delivered orders to verify eligibility? You can share your order number anytime."
             )
 
         return (
-            "Hello! I am your ReturnPilot AI assistant. I can help you check return/exchange eligibility, "
-            "explain store policies, resolve sizing issues, or track an existing return in English, Hindi, or Hinglish. "
-            "How can I assist you today?"
+            "I am your ReturnPilot AI assistant. I can help you check return or exchange eligibility, "
+            "explain store policies, resolve sizing issues, or track refunds. Please let me know your order number or what you'd like to check."
         )
 
 
